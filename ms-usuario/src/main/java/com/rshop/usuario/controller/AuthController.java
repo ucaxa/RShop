@@ -29,5 +29,29 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
     }
+
+    //esse controller debaixo é o correto
+ /*   @RestController
+    @RequestMapping("/api/auth")
+    @RequiredArgsConstructor
+    public class AuthController {
+
+        private final JwtService jwtService;
+        private final UsuarioService usuarioService;
+
+        @PostMapping("/login")
+        public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+            // Valida credenciais
+            Usuario usuario = usuarioService.validarCredenciais(request);
+
+            // Gera token
+            String token = jwtService.generateToken(
+                    usuario.getEmail(),
+                    usuario.getRoles()
+            );
+
+            return ResponseEntity.ok(new LoginResponse(token));
+        }
+    }*/
 }
 
