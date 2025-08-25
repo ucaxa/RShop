@@ -1,18 +1,24 @@
 package com.rshop.usuario.service.impl;
 
 
-import com.rshop.usuario.dto.usuario.*;
-import com.rshop.usuario.model.Endereco;
+
+import com.rshop.usuario.dto.usuario.PerfilResponse;
+import com.rshop.usuario.dto.usuario.PerfilUpdateRequest;
+import com.rshop.usuario.dto.usuario.UsuarioRequest;
+import com.rshop.usuario.dto.usuario.UsuarioResponse;
 import com.rshop.usuario.model.Perfil;
+import com.rshop.usuario.model.Role;
 import com.rshop.usuario.model.Usuario;
 import com.rshop.usuario.repository.PerfilRepository;
 import com.rshop.usuario.repository.UsuarioRepository;
 import com.rshop.usuario.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,23 +27,85 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PerfilRepository perfilRepository;
-
+    private final PasswordEncoder passwordEncoder;
 
     @Override
-    public UsuarioResponse getUsuarioAtual() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    @Transactional
+    public UsuarioResponse criarUsuario(UsuarioRequest usuarioRequest) {
+        // Verificar se email já existe
+        if (usuarioRepository.existsByEmail(usuarioRequest.getEmail())) {
+            throw new RuntimeException("Email já cadastrado: " + usuarioRequest.getEmail());
+        }
 
+        // Criar usuário
+        Usuario usuario = new Usuario();
+        usuario.setEmail(usuarioRequest.getEmail());
+        usuario.setSenha(passwordEncoder.encode(usuarioRequest.getSenha()));
+        usuario.setRole(usuarioRequest.getRole() != null ?
+                Role.valueOf(usuarioRequest.getRole()) : Role.CLIENTE);
+        usuario.setEnabled(false);
+        usuario.setDataCriacao(LocalDateTime.now());
+
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
+        return toUsuarioResponse(usuarioSalvo);
+    }
+
+    @Override
+    public UsuarioResponse buscarPorId(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com ID: " + id));
         return toUsuarioResponse(usuario);
     }
 
     @Override
-    @Transactional
-    public UsuarioResponse atualizarPerfil(PerfilUpdateRequest request) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    public UsuarioResponse buscarPorEmail(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com email: " + email));
+        return toUsuarioResponse(usuario);
+    }
+
+    @Override
+    public List<UsuarioResponse> listarTodos() {
+        return usuarioRepository.findAll().stream()
+                .map(this::toUsuarioResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse atualizarUsuario(Long id, UsuarioRequest usuarioRequest) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com ID: " + id));
+
+        // Atualizar email se fornecido e diferente
+        if (usuarioRequest.getEmail() != null &&
+                !usuarioRequest.getEmail().equals(usuario.getEmail())) {
+
+            if (usuarioRepository.existsByEmail(usuarioRequest.getEmail())) {
+                throw new RuntimeException("Email já está em uso: " + usuarioRequest.getEmail());
+            }
+            usuario.setEmail(usuarioRequest.getEmail());
+        }
+
+        // Atualizar senha se fornecida
+        if (usuarioRequest.getSenha() != null && !usuarioRequest.getSenha().isEmpty()) {
+            usuario.setSenha(passwordEncoder.encode(usuarioRequest.getSenha()));
+        }
+
+        // Atualizar role se fornecida
+        if (usuarioRequest.getRole() != null) {
+            usuario.setRole(Role.valueOf(usuarioRequest.getRole()));
+        }
+
+        Usuario usuarioAtualizado = usuarioRepository.save(usuario);
+        return toUsuarioResponse(usuarioAtualizado);
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse atualizarPerfil(Long usuarioId, PerfilUpdateRequest perfilRequest) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com ID: " + usuarioId));
 
         Perfil perfil = usuario.getPerfil();
         if (perfil == null) {
@@ -46,14 +114,14 @@ public class UsuarioServiceImpl implements UsuarioService {
             usuario.setPerfil(perfil);
         }
 
-        if (request.getNomeCompleto() != null) {
-            perfil.setNomeCompleto(request.getNomeCompleto());
+        if (perfilRequest.getNomeCompleto() != null) {
+            perfil.setNomeCompleto(perfilRequest.getNomeCompleto());
         }
-        if (request.getTelefone() != null) {
-            perfil.setTelefone(request.getTelefone());
+        if (perfilRequest.getTelefone() != null) {
+            perfil.setTelefone(perfilRequest.getTelefone());
         }
-        if (request.getDataNascimento() != null) {
-            perfil.setDataNascimento(request.getDataNascimento());
+        if (perfilRequest.getDataNascimento() != null) {
+            perfil.setDataNascimento(perfilRequest.getDataNascimento());
         }
 
         perfilRepository.save(perfil);
@@ -64,37 +132,19 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional
-    public UsuarioEnderecoResponse adicionarEndereco(UsuarioEnderecoRequest request) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-        Perfil perfil = usuario.getPerfil();
-        if (perfil == null) {
-            throw new RuntimeException("Perfil não encontrado");
+    public void deletarUsuario(Long id) {
+        if (!usuarioRepository.existsById(id)) {
+            throw new RuntimeException("Usuário não encontrado com ID: " + id);
         }
-
-        Endereco endereco = new Endereco();
-        endereco.setCep(request.getCep());
-        endereco.setLogradouro(request.getLogradouro());
-        endereco.setNumero(request.getNumero());
-        endereco.setComplemento(request.getComplemento());
-        endereco.setBairro(request.getBairro());
-        endereco.setCidade(request.getCidade());
-        endereco.setEstado(request.getEstado());
-        endereco.setPrincipal(request.isPrincipal());
-
-        if (request.isPrincipal()) {
-            perfil.getEnderecos().forEach(e -> e.setPrincipal(false));
-        }
-
-        perfil.adicionarEndereco(endereco);
-        perfilRepository.save(perfil);
-
-        return toEnderecoResponse(endereco);
+        usuarioRepository.deleteById(id);
     }
 
-    // Métodos auxiliares de conversão
+    @Override
+    public boolean existePorEmail(String email) {
+        return usuarioRepository.existsByEmail(email);
+    }
+
+    // Método de conversão para Response
     private UsuarioResponse toUsuarioResponse(Usuario usuario) {
         UsuarioResponse response = new UsuarioResponse();
         response.setId(usuario.getId());
@@ -117,27 +167,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         response.setTelefone(perfil.getTelefone());
         response.setCpf(perfil.getCpf());
         response.setDataNascimento(perfil.getDataNascimento());
-
-        if (perfil.getEnderecos() != null) {
-            response.setEnderecos(perfil.getEnderecos().stream()
-                    .map(this::toEnderecoResponse)
-                    .collect(Collectors.toList()));
-        }
-
-        return response;
-    }
-
-    private UsuarioEnderecoResponse toEnderecoResponse(Endereco endereco) {
-        UsuarioEnderecoResponse response = new UsuarioEnderecoResponse();
-        response.setId(endereco.getId());
-        response.setCep(endereco.getCep());
-        response.setLogradouro(endereco.getLogradouro());
-        response.setNumero(endereco.getNumero());
-        response.setComplemento(endereco.getComplemento());
-        response.setBairro(endereco.getBairro());
-        response.setCidade(endereco.getCidade());
-        response.setEstado(endereco.getEstado());
-        response.setPrincipal(endereco.isPrincipal());
         return response;
     }
 }
