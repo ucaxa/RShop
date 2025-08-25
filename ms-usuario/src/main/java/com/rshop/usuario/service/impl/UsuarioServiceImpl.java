@@ -1,18 +1,18 @@
 package com.rshop.usuario.service.impl;
 
 
-
-import com.rshop.usuario.dto.UsuarioDTO;
-import com.rshop.usuario.exception.ResourceNotFoundException;
+import com.rshop.usuario.dto.*;
+import com.rshop.usuario.model.Endereco;
+import com.rshop.usuario.model.Perfil;
 import com.rshop.usuario.model.Usuario;
+import com.rshop.usuario.repository.PerfilRepository;
 import com.rshop.usuario.repository.UsuarioRepository;
 import com.rshop.usuario.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,51 +20,123 @@ import java.util.stream.Collectors;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final ModelMapper modelMapper = new ModelMapper();
-    private final PasswordEncoder passwordEncoder;
+    private final PerfilRepository perfilRepository;
 
     @Override
-    public UsuarioDTO criarUsuario(UsuarioDTO usuarioDTO) {
-        Usuario usuario = modelMapper.map(usuarioDTO, Usuario.class);
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-        Usuario salvo = usuarioRepository.save(usuario);
-        return modelMapper.map(salvo, UsuarioDTO.class);
+    public UsuarioResponse getUsuarioAtual() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        return toUsuarioResponse(usuario);
     }
 
     @Override
-    public UsuarioDTO atualizarUsuario(Long id, UsuarioDTO usuarioDTO) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
-        usuario.setNome(usuarioDTO.getNome());
-        usuario.setEmail(usuarioDTO.getEmail());
-        // Atualizar senha se fornecida
-        if (usuarioDTO.getSenha() != null && !usuarioDTO.getSenha().isBlank()) {
-            usuario.setSenha(passwordEncoder.encode(usuarioDTO.getSenha()));
+    @Transactional
+    public UsuarioResponse atualizarPerfil(PerfilUpdateRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        Perfil perfil = usuario.getPerfil();
+        if (perfil == null) {
+            perfil = new Perfil();
+            perfil.setUsuario(usuario);
+            usuario.setPerfil(perfil);
         }
-        Usuario atualizado = usuarioRepository.save(usuario);
-        return modelMapper.map(atualizado, UsuarioDTO.class);
+
+        if (request.getNomeCompleto() != null) {
+            perfil.setNomeCompleto(request.getNomeCompleto());
+        }
+        if (request.getTelefone() != null) {
+            perfil.setTelefone(request.getTelefone());
+        }
+        if (request.getDataNascimento() != null) {
+            perfil.setDataNascimento(request.getDataNascimento());
+        }
+
+        perfilRepository.save(perfil);
+        usuarioRepository.save(usuario);
+
+        return toUsuarioResponse(usuario);
     }
 
     @Override
-    public void deletarUsuario(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
-        usuarioRepository.delete(usuario);
+    @Transactional
+    public EnderecoResponse adicionarEndereco(EnderecoRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        Perfil perfil = usuario.getPerfil();
+        if (perfil == null) {
+            throw new RuntimeException("Perfil não encontrado");
+        }
+
+        Endereco endereco = new Endereco();
+        endereco.setCep(request.getCep());
+        endereco.setLogradouro(request.getLogradouro());
+        endereco.setNumero(request.getNumero());
+        endereco.setComplemento(request.getComplemento());
+        endereco.setBairro(request.getBairro());
+        endereco.setCidade(request.getCidade());
+        endereco.setEstado(request.getEstado());
+        endereco.setPrincipal(request.isPrincipal());
+
+        if (request.isPrincipal()) {
+            perfil.getEnderecos().forEach(e -> e.setPrincipal(false));
+        }
+
+        perfil.adicionarEndereco(endereco);
+        perfilRepository.save(perfil);
+
+        return toEnderecoResponse(endereco);
     }
 
-    @Override
-    public UsuarioDTO buscarPorId(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com id: " + id));
-        return modelMapper.map(usuario, UsuarioDTO.class);
+    // Métodos auxiliares de conversão
+    private UsuarioResponse toUsuarioResponse(Usuario usuario) {
+        UsuarioResponse response = new UsuarioResponse();
+        response.setId(usuario.getId());
+        response.setEmail(usuario.getEmail());
+        response.setRole(usuario.getRole().name());
+        response.setEnabled(usuario.isEnabled());
+        response.setDataCriacao(usuario.getDataCriacao());
+        response.setDataUltimoLogin(usuario.getDataUltimoLogin());
+
+        if (usuario.getPerfil() != null) {
+            response.setPerfil(toPerfilResponse(usuario.getPerfil()));
+        }
+
+        return response;
     }
 
-    @Override
-    public List<UsuarioDTO> listarTodos() {
-        List<Usuario> usuarios = usuarioRepository.findAll();
-        return usuarios.stream()
-                .map(u -> modelMapper.map(u, UsuarioDTO.class))
-                .collect(Collectors.toList());
+    private PerfilResponse toPerfilResponse(Perfil perfil) {
+        PerfilResponse response = new PerfilResponse();
+        response.setNomeCompleto(perfil.getNomeCompleto());
+        response.setTelefone(perfil.getTelefone());
+        response.setCpf(perfil.getCpf());
+        response.setDataNascimento(perfil.getDataNascimento());
+
+        if (perfil.getEnderecos() != null) {
+            response.setEnderecos(perfil.getEnderecos().stream()
+                    .map(this::toEnderecoResponse)
+                    .collect(Collectors.toList()));
+        }
+
+        return response;
+    }
+
+    private EnderecoResponse toEnderecoResponse(Endereco endereco) {
+        EnderecoResponse response = new EnderecoResponse();
+        response.setId(endereco.getId());
+        response.setCep(endereco.getCep());
+        response.setLogradouro(endereco.getLogradouro());
+        response.setNumero(endereco.getNumero());
+        response.setComplemento(endereco.getComplemento());
+        response.setBairro(endereco.getBairro());
+        response.setCidade(endereco.getCidade());
+        response.setEstado(endereco.getEstado());
+        response.setPrincipal(endereco.isPrincipal());
+        return response;
     }
 }
-

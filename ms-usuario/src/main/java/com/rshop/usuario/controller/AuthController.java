@@ -1,6 +1,6 @@
 package com.rshop.usuario.controller;
 
-import com.rshop.usuario.dto.AuthRequest;
+import com.rshop.usuario.dto.LoginRequest;
 import com.rshop.usuario.dto.AuthResponse;
 import com.rshop.usuario.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest authRequest) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getSenha()));

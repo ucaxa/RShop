@@ -1,6 +1,11 @@
-CREATE TABLE IF NOT EXISTS usuario (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    senha VARCHAR(255) NOT NULL
-    );
+CREATE TABLE IF NOT EXISTS (
+       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+       email VARCHAR(255) UNIQUE NOT NULL,
+       senha VARCHAR(255) NOT NULL,
+       role VARCHAR(20) NOT NULL DEFAULT 'CLIENTE',
+       enabled BOOLEAN NOT NULL DEFAULT false,
+       token_confirmacao VARCHAR(255),
+       data_expiracao_token TIMESTAMP,
+       data_criacao TIMESTAMP NOT NULL,
+       data_ultimo_login TIMESTAMP
+);

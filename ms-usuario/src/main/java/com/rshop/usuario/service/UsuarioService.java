@@ -1,14 +1,16 @@
 package com.rshop.usuario.service;
 
-import com.rshop.usuario.dto.UsuarioDTO;
+import com.rshop.usuario.dto.EnderecoRequest;
+import com.rshop.usuario.dto.EnderecoResponse;
+import com.rshop.usuario.dto.PerfilUpdateRequest;
+import com.rshop.usuario.dto.UsuarioResponse;
 
-import java.util.List;
+
+
 
 public interface UsuarioService {
-    UsuarioDTO criarUsuario(UsuarioDTO usuarioDTO);
-    UsuarioDTO atualizarUsuario(Long id, UsuarioDTO usuarioDTO);
-    void deletarUsuario(Long id);
-    UsuarioDTO buscarPorId(Long id);
-    List<UsuarioDTO> listarTodos();
+    UsuarioResponse getUsuarioAtual();
+    UsuarioResponse atualizarPerfil(PerfilUpdateRequest request);
+    EnderecoResponse adicionarEndereco(EnderecoRequest request);
 }
 

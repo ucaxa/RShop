@@ -4,9 +4,7 @@ package com.rshop.usuario.dto;
 import lombok.*;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class AuthRequest {
+public class LoginRequest {
     private String email;
     private String senha;
 }
