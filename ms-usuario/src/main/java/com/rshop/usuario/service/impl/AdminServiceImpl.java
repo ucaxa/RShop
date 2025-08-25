@@ -1,12 +1,13 @@
 package com.rshop.usuario.service.impl;
 
 
+
+
 import com.rshop.usuario.dto.UsuarioResponse;
 import com.rshop.usuario.model.Role;
 import com.rshop.usuario.model.Usuario;
 import com.rshop.usuario.repository.UsuarioRepository;
 import com.rshop.usuario.service.AdminService;
-import com.rshop.usuario.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -16,12 +17,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
     private final UsuarioRepository usuarioRepository;
-    private final UsuarioService usuarioService;
 
     @Override
     public List<UsuarioResponse> listarTodosUsuarios() {
         return usuarioRepository.findAll().stream()
-                .map(usuarioService::toUsuarioResponse)
+                .map(this::toUsuarioResponse) // Usar método interno
                 .collect(Collectors.toList());
     }
 
@@ -33,7 +33,7 @@ public class AdminServiceImpl implements AdminService {
         usuario.setRole(novaRole);
         usuarioRepository.save(usuario);
 
-        return usuarioService.toUsuarioResponse(usuario);
+        return toUsuarioResponse(usuario);
     }
 
     @Override
@@ -43,5 +43,19 @@ public class AdminServiceImpl implements AdminService {
 
         usuario.setEnabled(false);
         usuarioRepository.save(usuario);
+    }
+
+    // Método interno para converter Usuario para UsuarioResponse
+    private UsuarioResponse toUsuarioResponse(Usuario usuario) {
+        UsuarioResponse response = new UsuarioResponse();
+        response.setId(usuario.getId());
+        response.setEmail(usuario.getEmail());
+        response.setRole(usuario.getRole().name());
+        response.setEnabled(usuario.isEnabled());
+        response.setDataCriacao(usuario.getDataCriacao());
+        response.setDataUltimoLogin(usuario.getDataUltimoLogin());
+        // Perfil será null inicialmente - pode ser implementado depois
+        response.setPerfil(null);
+        return response;
     }
 }

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bem-vindo - RSHop</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #28a745; color: white; padding: 20px; text-align: center; }
+        .content { background: #f9f9f9; padding: 20px; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Bem-vindo à RSHop!</h1>
+    </div>
+
+    <div class="content">
+        <h2>Olá, <span th:text="${nome}"></span>!</h2>
+
+        <p>Sua conta foi criada com sucesso e já está pronta para uso.</p>
+
+        <h3>O que você pode fazer agora:</h3>
+        <ul>
+            <li>🛍️ Navegar por nossos produtos</li>
+            <li>⭐ Adicionar itens aos favoritos</li>
+            <li>🛒 Realizar compras com segurança</li>
+            <li>📦 Acompanhar seus pedidos</li>
+        </ul>
+
+        <p>Estamos sempre trabalhando para melhorar sua experiência de compra!</p>
+
+        <p>
+            <a th:href="${app.frontend.url}" style="color: #28a745; text-decoration: none;">
+                → Começar a comprar agora
+            </a>
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>© 2024 RSHop. Sua loja virtual de confiança.</p>
+        <p>Dúvidas? Entre em contato: suporte@rshop.com</p>
+    </div>
+</div>
+</body>
+</html>
