@@ -82,8 +82,8 @@ public class JwtServiceImpl implements JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    private Key getSignInKey() {
+      private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKey(keyBytes);
+        return Keys.hmacShaKeyFor(keyBytes); // ← CORREÇÃO AQUI: usar hmacShaKeyFor()
     }
 }
