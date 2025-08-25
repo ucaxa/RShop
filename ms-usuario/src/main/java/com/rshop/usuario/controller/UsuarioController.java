@@ -1,6 +1,7 @@
 package com.rshop.usuario.controller;
 
-import com.rshop.usuario.dto.UsuarioResponse;
+import com.rshop.usuario.dto.usuario.UsuarioRequest;
+import com.rshop.usuario.dto.usuario.UsuarioResponse;
 import com.rshop.usuario.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @PostMapping
-    public ResponseEntity<UsuarioResponse> registrar(@RequestBody UsuarioResponse usuarioDTO) {
+    public ResponseEntity<UsuarioResponse> registrar(@RequestBody UsuarioRequest usuarioRequest) {
         UsuarioResponse criado = usuarioService.criarUsuario(usuarioDTO);
         return ResponseEntity.ok(criado);
     }

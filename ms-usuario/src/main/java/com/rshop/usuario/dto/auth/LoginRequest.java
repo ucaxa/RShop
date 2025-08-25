@@ -1,4 +1,4 @@
-package com.rshop.usuario.dto;
+package com.rshop.usuario.dto.auth;
 
 
 import lombok.*;

@@ -1,9 +1,9 @@
 package com.rshop.usuario.service;
 
-import com.rshop.usuario.dto.AuthResponse;
-import com.rshop.usuario.dto.LoginRequest;
-import com.rshop.usuario.dto.PasswordResetRequest;
-import com.rshop.usuario.dto.RegisterRequest;
+import com.rshop.usuario.dto.auth.AuthResponse;
+import com.rshop.usuario.dto.auth.LoginRequest;
+import com.rshop.usuario.dto.auth.PasswordResetRequest;
+import com.rshop.usuario.dto.auth.RegisterRequest;
 
 
 

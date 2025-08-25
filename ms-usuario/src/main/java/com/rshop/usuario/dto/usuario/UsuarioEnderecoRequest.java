@@ -1,9 +1,9 @@
-package com.rshop.usuario.dto;
+package com.rshop.usuario.dto.usuario;
 import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
 
 @Data
-public class EnderecoRequest {
+public class UsuarioEnderecoRequest {
     @NotBlank(message = "CEP é obrigatório")
     private String cep;
 

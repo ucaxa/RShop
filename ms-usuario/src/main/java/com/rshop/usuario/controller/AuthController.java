@@ -1,7 +1,7 @@
 package com.rshop.usuario.controller;
 
-import com.rshop.usuario.dto.LoginRequest;
-import com.rshop.usuario.dto.AuthResponse;
+import com.rshop.usuario.dto.auth.LoginRequest;
+import com.rshop.usuario.dto.auth.AuthResponse;
 import com.rshop.usuario.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

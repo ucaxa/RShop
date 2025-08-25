@@ -1,7 +1,7 @@
 package com.rshop.usuario.service.impl;
 
 
-import com.rshop.usuario.dto.*;
+import com.rshop.usuario.dto.usuario.*;
 import com.rshop.usuario.model.Endereco;
 import com.rshop.usuario.model.Perfil;
 import com.rshop.usuario.model.Usuario;
@@ -21,6 +21,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PerfilRepository perfilRepository;
+
 
     @Override
     public UsuarioResponse getUsuarioAtual() {
@@ -63,7 +64,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional
-    public EnderecoResponse adicionarEndereco(EnderecoRequest request) {
+    public UsuarioEnderecoResponse adicionarEndereco(UsuarioEnderecoRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
@@ -126,8 +127,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         return response;
     }
 
-    private EnderecoResponse toEnderecoResponse(Endereco endereco) {
-        EnderecoResponse response = new EnderecoResponse();
+    private UsuarioEnderecoResponse toEnderecoResponse(Endereco endereco) {
+        UsuarioEnderecoResponse response = new UsuarioEnderecoResponse();
         response.setId(endereco.getId());
         response.setCep(endereco.getCep());
         response.setLogradouro(endereco.getLogradouro());

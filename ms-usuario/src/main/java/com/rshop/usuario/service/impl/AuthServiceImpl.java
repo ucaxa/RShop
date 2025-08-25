@@ -1,26 +1,16 @@
 package com.rshop.usuario.service.impl;
 
 
-import com.rshop.usuario.dto.AuthResponse;
-import com.rshop.usuario.dto.LoginRequest;
-import com.rshop.usuario.dto.PasswordResetRequest;
-import com.rshop.usuario.dto.RegisterRequest;
+import com.rshop.usuario.dto.auth.AuthResponse;
+import com.rshop.usuario.dto.auth.LoginRequest;
+import com.rshop.usuario.dto.auth.PasswordResetRequest;
+import com.rshop.usuario.dto.auth.RegisterRequest;
 import com.rshop.usuario.model.Role;
 import com.rshop.usuario.model.Usuario;
 import com.rshop.usuario.repository.UsuarioRepository;
 import com.rshop.usuario.service.AuthService;
 import com.rshop.usuario.service.EmailService;
 import com.rshop.usuario.service.JwtService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

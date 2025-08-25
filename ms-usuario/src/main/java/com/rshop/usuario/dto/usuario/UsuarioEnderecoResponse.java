@@ -1,10 +1,10 @@
-package com.rshop.usuario.dto;
+package com.rshop.usuario.dto.usuario;
 
 
 import lombok.Data;
 
 @Data
-public class EnderecoResponse {
+public class UsuarioEnderecoResponse {
     private Long id;
     private String cep;
     private String logradouro;

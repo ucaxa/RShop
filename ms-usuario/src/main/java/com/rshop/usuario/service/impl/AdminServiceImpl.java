@@ -3,7 +3,7 @@ package com.rshop.usuario.service.impl;
 
 
 
-import com.rshop.usuario.dto.UsuarioResponse;
+import com.rshop.usuario.dto.usuario.UsuarioResponse;
 import com.rshop.usuario.model.Role;
 import com.rshop.usuario.model.Usuario;
 import com.rshop.usuario.repository.UsuarioRepository;
