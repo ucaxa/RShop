@@ -1,5 +1,6 @@
 package com.rshop.usuario.security;
 
+
 import com.rshop.usuario.service.JwtService;
 import com.rshop.usuario.service.impl.UsuarioDetailsService;
 import jakarta.servlet.FilterChain;
@@ -7,12 +8,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 
 @Component
@@ -23,9 +26,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UsuarioDetailsService usuarioDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
@@ -37,28 +42,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Extrair o token JWT (remover "Bearer " do início)
-        jwt = authHeader.substring(7);
-        userEmail = jwtService.extractUsername(jwt);
+        try {
+            // Extrair o token JWT (remover "Bearer " do início)
+            jwt = authHeader.substring(7);
+            userEmail = jwtService.extractUsername(jwt);
 
-        // Verificar se já não existe autenticação no contexto
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.usuarioDetailsService.loadUserByUsername(userEmail);
+            // Verificar se já não existe autenticação no contexto
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.usuarioDetailsService.loadUserByUsername(userEmail);
 
-            // Validar o token JWT
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
+                // Validar o token JWT
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
 
-                // Adicionar detalhes da requisição
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    // Adicionar detalhes da requisição
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // Configurar a autenticação no contexto de segurança
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // Configurar a autenticação no contexto de segurança
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            logger.error("Erro ao processar token JWT", e);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token inválido ou expirado");
+            return;
         }
 
         // Continuar o filtro

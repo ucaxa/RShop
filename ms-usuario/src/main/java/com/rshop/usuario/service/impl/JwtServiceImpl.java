@@ -1,6 +1,4 @@
 package com.rshop.usuario.service.impl;
-
-
 import com.rshop.usuario.model.Usuario;
 import com.rshop.usuario.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -44,6 +42,22 @@ public class JwtServiceImpl implements JwtService {
         extraClaims.put("role", usuario.getRole().name());
         extraClaims.put("email", usuario.getEmail());
 
+        return generateToken(extraClaims, usuario);
+    }
+
+    // MÉTODO ADICIONADO PARA CORRIGIR O ERRO
+    private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        return Jwts.builder()
+                .setClaims(extraClaims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // MÉTODO ADICIONADO PARA CORRIGIR O ERRO
+    private String generateToken(Map<String, Object> extraClaims, Usuario usuario) {
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(usuario.getEmail())
@@ -82,8 +96,8 @@ public class JwtServiceImpl implements JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-      private Key getSignInKey() {
+    private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes); // ← CORREÇÃO AQUI: usar hmacShaKeyFor()
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

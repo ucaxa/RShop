@@ -1,4 +1,4 @@
-CREATE TABLE enderecos (
+CREATE TABLE IF NOT EXISTS enderecos (
        id BIGINT AUTO_INCREMENT PRIMARY KEY,
        cep VARCHAR(9) NOT NULL,
        logradouro VARCHAR(255) NOT NULL,

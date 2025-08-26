@@ -1,57 +1,60 @@
 package com.rshop.usuario.controller;
 
-import com.rshop.usuario.dto.auth.LoginRequest;
 import com.rshop.usuario.dto.auth.AuthResponse;
-import com.rshop.usuario.security.JwtUtil;
+import com.rshop.usuario.dto.auth.LoginRequest;
+import com.rshop.usuario.dto.auth.PasswordResetRequest;
+import com.rshop.usuario.dto.auth.RegisterRequest;
+import com.rshop.usuario.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.*;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest authRequest) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getSenha()));
-
-            String token = jwtUtil.generateToken(authRequest.getEmail());
-            return ResponseEntity.ok(new AuthResponse(token));
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        AuthResponse authResponse = authService.login(request);
+        return ResponseEntity.ok(authResponse);
     }
 
-    //esse controller debaixo é o correto
- /*   @RestController
-    @RequestMapping("/api/auth")
-    @RequiredArgsConstructor
-    public class AuthController {
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+        AuthResponse authResponse = authService.register(request);
+        return ResponseEntity.ok(authResponse);
+    }
 
-        private final JwtService jwtService;
-        private final UsuarioService usuarioService;
+    @GetMapping("/confirmar-email")
+    public ResponseEntity<String> confirmarEmail(@RequestParam String token) {
+        authService.confirmarEmail(token);
+        return ResponseEntity.ok("Email confirmado com sucesso!");
+    }
 
-        @PostMapping("/login")
-        public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-            // Valida credenciais
-            Usuario usuario = usuarioService.validarCredenciais(request);
+    @PostMapping("/reenviar-confirmacao")
+    public ResponseEntity<String> reenviarConfirmacao(@RequestParam String email) {
+        authService.reenviarEmailConfirmacao(email);
+        return ResponseEntity.ok("Email de confirmação reenviado!");
+    }
 
-            // Gera token
-            String token = jwtService.generateToken(
-                    usuario.getEmail(),
-                    usuario.getRoles()
-            );
+    @PostMapping("/esqueci-senha")
+    public ResponseEntity<String> solicitarRecuperacaoSenha(@RequestParam String email) {
+        authService.solicitarRecuperacaoSenha(email);
+        return ResponseEntity.ok("Email de recuperação enviado!");
+    }
 
-            return ResponseEntity.ok(new LoginResponse(token));
-        }
-    }*/
+    @PostMapping("/redefinir-senha")
+    public ResponseEntity<String> redefinirSenha(@Valid @RequestBody PasswordResetRequest request) {
+        authService.redefinirSenha(request);
+        return ResponseEntity.ok("Senha redefinida com sucesso!");
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("Auth service is running!");
+    }
 }
-
