@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
         emailService.enviarEmailConfirmacao(usuario.getEmail(), usuario.getTokenConfirmacao());
 
         return new AuthResponse(
-                jwtService.generateToken(usuario),
+                null,
                 usuario.getEmail(),
                 usuario.getRole().name()
         );

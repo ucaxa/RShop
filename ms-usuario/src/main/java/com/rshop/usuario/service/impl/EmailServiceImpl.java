@@ -1,22 +1,32 @@
 package com.rshop.usuario.service.impl;
 
 
-
 import com.rshop.usuario.service.EmailService;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    @Value("${app.frontend.confirmacaoEmailPath}")
+    private String confirmacaoEmailPath;
+
+    @Value("${app.frontend.recuperacaoSenhaPath}")
+    private String recuperacaoSenhaPath;
 
     @Override
     public void enviarEmailConfirmacao(String email, String token) {
@@ -26,6 +36,9 @@ public class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("token", token);
         context.setVariable("email", email);
+
+        // Adicionar as variáveis do app ao contexto
+        adicionarVariaveisAppAoContexto(context);
 
         enviarEmailComTemplate(email, assunto, template, context);
     }
@@ -39,6 +52,9 @@ public class EmailServiceImpl implements EmailService {
         context.setVariable("token", token);
         context.setVariable("email", email);
 
+        // Adicionar as variáveis do app ao contexto
+        adicionarVariaveisAppAoContexto(context);
+
         enviarEmailComTemplate(email, assunto, template, context);
     }
 
@@ -51,7 +67,20 @@ public class EmailServiceImpl implements EmailService {
         context.setVariable("nome", nome);
         context.setVariable("email", email);
 
+        // Adicionar as variáveis do app ao contexto (se necessário)
+        adicionarVariaveisAppAoContexto(context);
+
         enviarEmailComTemplate(email, assunto, template, context);
+    }
+
+    private void adicionarVariaveisAppAoContexto(Context context) {
+        context.setVariable("app", Map.of(
+                "frontend", Map.of(
+                        "url", frontendUrl,
+                        "confirmacaoEmailPath", confirmacaoEmailPath,
+                        "recuperacaoSenhaPath", recuperacaoSenhaPath
+                )
+        ));
     }
 
     private void enviarEmailComTemplate(String to, String subject, String template, Context context) {

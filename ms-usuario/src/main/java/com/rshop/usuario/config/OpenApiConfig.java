@@ -13,7 +13,7 @@ public class OpenApiConfig {
     public OpenAPI springShopOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("RSHop Catálogo API - Microserviço de pedidos")
+                        .title("RSHop Catálogo API - Microserviço de usuarios")
                         .description("API para gerenciamento de pedidos")
                         .version("v1.0"));
     }

@@ -24,7 +24,7 @@
         <p>Olá! Clique no botão abaixo para confirmar seu endereço de email:</p>
 
         <p>
-            <a th:href="${app.frontend.url} + ${app.frontend.confirmacao-email-path} + '?token=' + ${token}"
+            <a th:href="${app.frontend.url} + ${app.frontend.confirmacaoEmailPath} + '?token=' + ${token}"
                class="button">
                 Confirmar Email
             </a>
@@ -32,7 +32,7 @@
 
         <p>Se o botão não funcionar, copie e cole este link no seu navegador:</p>
         <p>
-            <small th:text="${app.frontend.url} + ${app.frontend.confirmacao-email-path} + '?token=' + ${token}"></small>
+            <small th:text="${app.frontend.url} + ${app.frontend.confirmacaoEmailPath} + '?token=' + ${token}"></small>
         </p>
 
         <p>Este link expira em 24 horas.</p>
