@@ -1,20 +1,27 @@
 package com.rshop.usuario.model;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
+/**
+ * Entidade que representa um usuário do sistema.
+ * Contém informações de autenticação, dados pessoais e endereços.
+ * Implementa UserDetails para integração com Spring Security.
+ */
 @Entity
 @Table(name = "usuarios")
 @Getter
 @Setter
 public class Usuario implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,18 +47,40 @@ public class Usuario implements UserDetails {
 
     private LocalDateTime dataUltimoLogin;
 
-    // Relacionamento 1:1 com Perfil
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Perfil perfil;
+    // Dados pessoais (antigamente na classe Perfil)
+    @Column(name = "nome_completo", nullable = false)
+    private String nomeCompleto;
 
-    // Construtor padrão
+    private String telefone;
+
+    @Column(unique = true)
+    private String cpf;
+
+    @Column(name = "data_nascimento")
+    private LocalDate dataNascimento;
+
+    // Relacionamento 1:N com Endereco
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Endereco> enderecos = new ArrayList<>();
+
+    /**
+     * Construtor padrão.
+     */
     public Usuario() {}
 
-    // Construtor para registro
-    public Usuario(String email, String senha, Role role) {
+    /**
+     * Construtor para criação de novo usuário.
+     *
+     * @param email Email do usuário (deve ser único)
+     * @param senha Senha criptografada do usuário
+     * @param role Papel do usuário no sistema
+     * @param nomeCompleto Nome completo do usuário
+     */
+    public Usuario(String email, String senha, Role role, String nomeCompleto) {
         this.email = email;
         this.senha = senha;
         this.role = role;
+        this.nomeCompleto = nomeCompleto;
         this.enabled = false;
     }
 
@@ -92,28 +121,82 @@ public class Usuario implements UserDetails {
     }
 
     // Métodos utilitários
+    /**
+     * Ativa a conta do usuário e limpa os tokens de confirmação.
+     */
     public void ativarUsuario() {
         this.enabled = true;
         this.tokenConfirmacao = null;
         this.dataExpiracaoToken = null;
     }
 
+    /**
+     * Verifica se o token de confirmação está expirado.
+     *
+     * @return true se o token estiver expirado, false caso contrário
+     */
     public boolean isTokenExpirado() {
         return dataExpiracaoToken != null &&
                 dataExpiracaoToken.isBefore(LocalDateTime.now());
     }
 
+    /**
+     * Atualiza a data do último login para o momento atual.
+     */
     public void atualizarUltimoLogin() {
         this.dataUltimoLogin = LocalDateTime.now();
     }
 
-    // Método para criar perfil associado
-    public void criarPerfil(String nomeCompleto, String telefone, String cpf) {
-        Perfil perfil = new Perfil();
-        perfil.setNomeCompleto(nomeCompleto);
-        perfil.setTelefone(telefone);
-        perfil.setCpf(cpf);
-        perfil.setUsuario(this);
-        this.perfil = perfil;
+    /**
+     * Adiciona um endereço à lista de endereços do usuário.
+     *
+     * @param endereco Endereço a ser adicionado
+     */
+    public void adicionarEndereco(Endereco endereco) {
+        enderecos.add(endereco);
+        endereco.setUsuario(this);
+    }
+
+    /**
+     * Remove um endereço da lista de endereços do usuário.
+     *
+     * @param endereco Endereço a ser removido
+     */
+    public void removerEndereco(Endereco endereco) {
+        enderecos.remove(endereco);
+        endereco.setUsuario(null);
+    }
+
+    /**
+     * Retorna o endereço principal do usuário.
+     *
+     * @return Endereço marcado como principal, ou null se não houver
+     */
+    public Endereco getEnderecoPrincipal() {
+        return enderecos.stream()
+                .filter(Endereco::isPrincipal)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Verifica se o usuário possui algum endereço cadastrado.
+     *
+     * @return true se o usuário tiver pelo menos um endereço, false caso contrário
+     */
+    public boolean possuiEnderecos() {
+        return enderecos != null && !enderecos.isEmpty();
+    }
+
+    /**
+     * Retorna a idade do usuário com base na data de nascimento.
+     *
+     * @return Idade em anos, ou null se data de nascimento não estiver definida
+     */
+    public Integer getIdade() {
+        if (dataNascimento == null) {
+            return null;
+        }
+        return LocalDate.now().getYear() - dataNascimento.getYear();
     }
 }

@@ -32,7 +32,7 @@ import java.util.Arrays;
  * <p><strong>Hierarquia de Roles:</strong></p>
  * <ul>
  *   <li><code>ROLE_ADMIN</code>: Acesso completo ao sistema</li>
- *   <li><code>ROLE_MANAGER</code>: Acesso de leitura administrativo</li>
+ *   <li><code>ROLE_GERENTE</code>: Acesso de leitura administrativo</li>
  *   <li><code>ROLE_CLIENTE</code>: Acesso apenas aos próprios recursos</li>
  * </ul>
  *
@@ -77,13 +77,13 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 👮‍♂️ ENDPOINTS ADMINISTRATIVOS
-                        .requestMatchers(HttpMethod.GET, "/admin/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/admin/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_GERENTE")
                         .requestMatchers(HttpMethod.POST, "/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/admin/**").hasAuthority("ROLE_ADMIN")
 
                         // 👥 GESTÃO DE USUÁRIOS
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_GERENTE")
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/usuarios/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/usuarios/**").hasAuthority("ROLE_ADMIN")

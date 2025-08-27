@@ -89,22 +89,11 @@ public class UsuarioController {
     @PreAuthorize("hasRole('ADMIN') or @securityUtils.isOwnProfile(#id)")
     public ResponseEntity<UsuarioResponse> atualizarUsuario(
             @PathVariable Long id,
-            @Valid @RequestBody UsuarioRequest usuarioRequest) {
-        UsuarioResponse usuarioAtualizado = usuarioService.atualizarUsuario(id, usuarioRequest);
+            @Valid @RequestBody UsuarioUpdateRequest usuarioUpdateRequest) {
+        UsuarioResponse usuarioAtualizado = usuarioService.atualizarUsuario(id, usuarioUpdateRequest);
         return ResponseEntity.ok(usuarioAtualizado);
     }
 
-    /**
-     * ATUALIZA PERFIL (ADMIN OU PRÓPRIO USUÁRIO)
-     */
-    @PutMapping("/{id}/perfil")
-    @PreAuthorize("hasRole('ADMIN') or @securityUtils.isOwnProfile(#id)")
-    public ResponseEntity<UsuarioResponse> atualizarPerfil(
-            @PathVariable Long id,
-            @Valid @RequestBody PerfilUpdateRequest perfilRequest) {
-        UsuarioResponse usuarioAtualizado = usuarioService.atualizarPerfil(id, perfilRequest);
-        return ResponseEntity.ok(usuarioAtualizado);
-    }
 
     /**
      * DELETA USUÁRIO (APENAS ADMIN)

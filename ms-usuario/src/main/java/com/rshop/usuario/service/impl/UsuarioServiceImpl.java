@@ -1,14 +1,11 @@
 package com.rshop.usuario.service.impl;
 
-import com.rshop.usuario.dto.usuario.PerfilResponse;
-import com.rshop.usuario.dto.usuario.PerfilUpdateRequest;
 import com.rshop.usuario.dto.usuario.UsuarioRequest;
 import com.rshop.usuario.dto.usuario.UsuarioResponse;
+import com.rshop.usuario.dto.usuario.UsuarioUpdateRequest;
 import com.rshop.usuario.exception.UsuarioException;
-import com.rshop.usuario.model.Perfil;
 import com.rshop.usuario.model.Role;
 import com.rshop.usuario.model.Usuario;
-import com.rshop.usuario.repository.PerfilRepository;
 import com.rshop.usuario.repository.UsuarioRepository;
 import com.rshop.usuario.service.JwtService;
 import com.rshop.usuario.service.UsuarioService;
@@ -30,7 +27,6 @@ import java.util.stream.Collectors;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final PerfilRepository perfilRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
@@ -53,6 +49,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 Role.valueOf(usuarioRequest.getRole()) : Role.CLIENTE);
         usuario.setEnabled(false);
         usuario.setDataCriacao(LocalDateTime.now());
+        usuario.setDataNascimento(usuarioRequest.getDataNascimento());
 
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
         return toUsuarioResponse(usuarioSalvo);
@@ -76,6 +73,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setRole(Role.ADMIN);
         usuario.setEnabled(true);
         usuario.setDataCriacao(LocalDateTime.now());
+        usuario.setDataNascimento(usuarioRequest.getDataNascimento());
 
         Usuario usuarioSalvo = usuarioRepository.save(usuario);
         return toUsuarioResponse(usuarioSalvo);
@@ -116,65 +114,45 @@ public class UsuarioServiceImpl implements UsuarioService {
      */
     @Override
     @Transactional
-    public UsuarioResponse atualizarUsuario(Long id, UsuarioRequest usuarioRequest) {
+    public UsuarioResponse atualizarUsuario(Long id, UsuarioUpdateRequest usuarioUpdateRequest) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioException("Usuário não encontrado com ID: " + id));
 
         // Atualizar email se fornecido e diferente
-        if (usuarioRequest.getEmail() != null &&
-                !usuarioRequest.getEmail().equals(usuario.getEmail())) {
+        if (usuarioUpdateRequest.getEmail() != null &&
+                !usuarioUpdateRequest.getEmail().equals(usuario.getEmail())) {
 
-            if (usuarioRepository.existsByEmail(usuarioRequest.getEmail())) {
-                throw new UsuarioException("Email já está em uso: " + usuarioRequest.getEmail());
+            if (usuarioRepository.existsByEmail(usuarioUpdateRequest.getEmail())) {
+                throw new UsuarioException("Email já está em uso: " + usuarioUpdateRequest.getEmail());
             }
-            usuario.setEmail(usuarioRequest.getEmail());
+            usuario.setEmail(usuarioUpdateRequest.getEmail());
         }
 
         // Atualizar senha se fornecida
-        if (usuarioRequest.getSenha() != null && !usuarioRequest.getSenha().isEmpty()) {
-            usuario.setSenha(passwordEncoder.encode(usuarioRequest.getSenha()));
+        if (usuarioUpdateRequest.getSenha() != null && !usuarioUpdateRequest.getSenha().isEmpty()) {
+            usuario.setSenha(passwordEncoder.encode(usuarioUpdateRequest.getSenha()));
         }
 
         // Atualizar role se fornecida
-        if (usuarioRequest.getRole() != null) {
-            usuario.setRole(Role.valueOf(usuarioRequest.getRole()));
+        if (usuarioUpdateRequest.getRole() != null) {
+            usuario.setRole(Role.valueOf(usuarioUpdateRequest.getRole()));
+        }
+
+        if (usuarioUpdateRequest.getNomeCompleto() != null) {
+            usuario.setNomeCompleto(usuarioUpdateRequest.getNomeCompleto());
+        }
+        if (usuarioUpdateRequest.getTelefone() != null) {
+            usuario.setTelefone(usuarioUpdateRequest.getTelefone());
+        }
+        if (usuarioUpdateRequest.getDataNascimento() != null) {
+            usuario.setDataNascimento(usuarioUpdateRequest.getDataNascimento());
         }
 
         Usuario usuarioAtualizado = usuarioRepository.save(usuario);
         return toUsuarioResponse(usuarioAtualizado);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @Transactional
-    public UsuarioResponse atualizarPerfil(Long usuarioId, PerfilUpdateRequest perfilRequest) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new UsuarioException("Usuário não encontrado com ID: " + usuarioId));
 
-        Perfil perfil = usuario.getPerfil();
-        if (perfil == null) {
-            perfil = new Perfil();
-            perfil.setUsuario(usuario);
-            usuario.setPerfil(perfil);
-        }
-
-        if (perfilRequest.getNomeCompleto() != null) {
-            perfil.setNomeCompleto(perfilRequest.getNomeCompleto());
-        }
-        if (perfilRequest.getTelefone() != null) {
-            perfil.setTelefone(perfilRequest.getTelefone());
-        }
-        if (perfilRequest.getDataNascimento() != null) {
-            perfil.setDataNascimento(perfilRequest.getDataNascimento());
-        }
-
-        perfilRepository.save(perfil);
-        usuarioRepository.save(usuario);
-
-        return toUsuarioResponse(usuario);
-    }
 
     /**
      * {@inheritDoc}
@@ -210,24 +188,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         response.setDataCriacao(usuario.getDataCriacao());
         response.setDataUltimoLogin(usuario.getDataUltimoLogin());
 
-        if (usuario.getPerfil() != null) {
-            response.setPerfil(toPerfilResponse(usuario.getPerfil()));
-        }
-
         return response;
     }
 
-    /**
-     * Converte entidade Perfil para PerfilResponse
-     * @param perfil Entidade perfil
-     * @return Response DTO
-     */
-    private PerfilResponse toPerfilResponse(Perfil perfil) {
-        PerfilResponse response = new PerfilResponse();
-        response.setNomeCompleto(perfil.getNomeCompleto());
-        response.setTelefone(perfil.getTelefone());
-        response.setCpf(perfil.getCpf());
-        response.setDataNascimento(perfil.getDataNascimento());
-        return response;
-    }
+
 }

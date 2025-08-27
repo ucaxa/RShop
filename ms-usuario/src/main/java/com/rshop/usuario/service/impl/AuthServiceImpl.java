@@ -42,12 +42,17 @@ public class AuthServiceImpl implements AuthService {
         usuario.setRole(Role.CLIENTE);
         usuario.setTokenConfirmacao(UUID.randomUUID().toString());
         usuario.setDataExpiracaoToken(LocalDateTime.now().plusHours(24));
+        //dados que estavam no perfil
+        usuario.setNomeCompleto(request.getNomeCompleto());
+        usuario.setTelefone(request.getTelefone());
+        usuario.setCpf(request.getCpf());
 
-        usuario.criarPerfil(
+
+       /* usuario.criarPerfil(
                 request.getNomeCompleto(),
                 request.getTelefone(),
                 request.getCpf()
-        );
+        );*/
 
         usuarioRepository.save(usuario);
         emailService.enviarEmailConfirmacao(usuario.getEmail(), usuario.getTokenConfirmacao());
@@ -94,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
 
         usuario.ativarUsuario();
         usuarioRepository.save(usuario);
-        emailService.enviarEmailBemVindo(usuario.getEmail(), usuario.getPerfil().getNomeCompleto());
+        emailService.enviarEmailBemVindo(usuario.getEmail(), usuario.getNomeCompleto());
     }
 
     @Override

@@ -54,8 +54,6 @@ public class AdminServiceImpl implements AdminService {
         response.setEnabled(usuario.isEnabled());
         response.setDataCriacao(usuario.getDataCriacao());
         response.setDataUltimoLogin(usuario.getDataUltimoLogin());
-        // Perfil será null inicialmente - pode ser implementado depois
-        response.setPerfil(null);
         return response;
     }
 }

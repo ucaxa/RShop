@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS enderecos (
        cidade VARCHAR(100) NOT NULL,
        estado VARCHAR(2) NOT NULL,
        principal BOOLEAN DEFAULT false,
-       perfil_id BIGINT REFERENCES perfis(id)
+       usuario_id BIGINT REFERENCES usuarios(id)
 );

@@ -1,4 +1,5 @@
 package com.rshop.usuario.dto.usuario;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -10,15 +11,15 @@ import java.time.LocalDate;
  * Inclui dados de autenticação e informações pessoais (antigamente no Perfil).
  */
 @Data
-@Schema(description = "DTO de requisição para criação de usuário")
-public class UsuarioRequest {
+@Schema(description = "DTO de requisição para atualização de usuário")
 
-    @NotBlank(message = "Email é obrigatório")
+public class UsuarioUpdateRequest {
+  //  @NotBlank(message = "Email é obrigatório")
     @Email(message = "Email deve ser válido")
     @Schema(description = "Email do usuário", example = "usuario@exemplo.com")
     private String email;
 
-    @NotBlank(message = "Senha é obrigatória")
+ //   @NotBlank(message = "Senha é obrigatória")
     @Size(min = 6, message = "Senha deve ter pelo menos 6 caracteres")
     @Schema(description = "Senha do usuário", example = "senha123")
     private String senha;
@@ -28,7 +29,7 @@ public class UsuarioRequest {
     private String role;
 
     // Campos movidos do Perfil
-    @NotBlank(message = "Nome completo é obrigatório")
+  //  @NotBlank(message = "Nome completo é obrigatório")
     @Schema(description = "Nome completo do usuário", example = "João Silva")
     private String nomeCompleto;
 
@@ -39,7 +40,6 @@ public class UsuarioRequest {
     @Schema(description = "CPF do usuário", example = "123.456.789-00")
     private String cpf;
 
-    @NotBlank
     @Past
     private LocalDate dataNascimento;
 }
