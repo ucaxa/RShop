@@ -1,6 +1,4 @@
 package com.rshop.usuario.security;
-
-
 import com.rshop.usuario.service.JwtService;
 import com.rshop.usuario.service.impl.UsuarioDetailsService;
 import lombok.RequiredArgsConstructor;
@@ -26,98 +24,96 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 /**
- * CONFIGURAÇÃO PRINCIPAL DE SEGURANÇA DA APLICAÇÃO
+ * Configuração principal de segurança da aplicação
  *
- * Esta classe define políticas de segurança, autenticação JWT,
- * autorização de endpoints e configurações CORS para o microserviço.
+ * <p>Responsável por configurar políticas de segurança, autenticação JWT,
+ * autorização de endpoints e CORS para o microserviço de usuários.</p>
+ *
+ * <p><strong>Hierarquia de Roles:</strong></p>
+ * <ul>
+ *   <li><code>ROLE_ADMIN</code>: Acesso completo ao sistema</li>
+ *   <li><code>ROLE_MANAGER</code>: Acesso de leitura administrativo</li>
+ *   <li><code>ROLE_CLIENTE</code>: Acesso apenas aos próprios recursos</li>
+ * </ul>
+ *
+ * @author [Seu Nome]
+ * @version 1.0
+ * @since 2024
  */
 @Configuration
-@EnableWebSecurity          // Habilita segurança web do Spring Security
-@EnableMethodSecurity       // Habilita segurança em nível de método (@PreAuthorize)
-@RequiredArgsConstructor    // Gera construtor com dependências obrigatórias
+@EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // Serviço para operações JWT (geração, validação, extração)
     private final JwtService jwtService;
-
-    // Serviço customizado para carregar detalhes do usuário do banco
     private final UsuarioDetailsService usuarioDetailsService;
 
     /**
-     * CONFIGURAÇÃO PRINCIPAL DO FILTRO DE SEGURANÇA
+     * Configuração principal da cadeia de filtros de segurança
      *
-     * Define a cadeia de filtros de segurança, políticas de acesso,
-     * configurações CORS e integração com JWT.
+     * <p>Define políticas de acesso, CORS, autenticação e autorização para todos os endpoints
+     * da aplicação. Configura a aplicação para ser stateless com autenticação JWT.</p>
+     *
+     * @param http Configuração HTTP do Spring Security
+     * @return SecurityFilterChain configurado
+     * @throws Exception Se ocorrer erro na configuração
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 🔄 Configuração CORS para comunicação com frontend
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 🚫 Desabilita CSRF (não necessário para APIs stateless JWT)
                 .csrf(csrf -> csrf.disable())
-
-                // 🎯 CONFIGURAÇÃO DE AUTORIZAÇÃO DE ENDPOINTS
                 .authorizeHttpRequests(authz -> authz
-                        // ✅ ENDPOINTS PÚBLICOS (acesso liberado)
-                        .requestMatchers("/auth/**").permitAll()                   // Autenticação
-                        .requestMatchers("/api/usuarios/verificar-email/**").permitAll() // Verificação email
+                        // 🔓 ENDPOINTS PÚBLICOS
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/usuarios/verificar-email/**").permitAll()
 
-                        // 📚 DOCUMENTAÇÃO SWAGGER (acesso liberado para desenvolvimento)
+                        // 📚 DOCUMENTAÇÃO
                         .requestMatchers(
-                                "/swagger-ui.html", "/swagger-ui/**", "/swagger-ui/index.html",
-                                "/v3/api-docs", "/v3/api-docs/**", "/v2/api-docs", "/v2/api-docs/**",
-                                "/swagger-resources", "/swagger-resources/**",
-                                "/configuration/ui", "/configuration/security",
-                                "/webjars/**"
+                                "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+                                "/v2/api-docs/**", "/swagger-resources/**", "/webjars/**",
+                                "/configuration/ui", "/configuration/security"
                         ).permitAll()
 
-                        // 👮‍♂️ ENDPOINTS ADMINISTRATIVOS (acesso restrito)
-                        .requestMatchers(HttpMethod.GET, "/admin/**").hasAnyRole("ADMIN", "MANAGER")    // Leitura
-                        .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")                 // Criação
-                        .requestMatchers(HttpMethod.PUT, "/admin/**").hasRole("ADMIN")                  // Atualização
-                        .requestMatchers(HttpMethod.DELETE, "/admin/**").hasRole("ADMIN")               // Exclusão
+                        // 👮‍♂️ ENDPOINTS ADMINISTRATIVOS
+                        .requestMatchers(HttpMethod.GET, "/admin/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/admin/**").hasAuthority("ROLE_ADMIN")
 
-                        // 👥 GESTÃO DE USUÁRIOS (acesso restrito)
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/usuarios/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/usuarios/**").hasRole("ADMIN")
+                        // 👥 GESTÃO DE USUÁRIOS
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/usuarios/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/usuarios/**").hasAuthority("ROLE_ADMIN")
 
-                        // 🛒 ENDPOINTS DE NEGÓCIO (acesso autenticado)
-                        .requestMatchers("/api/pedidos/**").authenticated()        // Pedidos
-                        .requestMatchers("/api/pagamentos/**").authenticated()     // Pagamentos
+                        // 🛒 ENDPOINTS DE NEGÓCIO
+                        .requestMatchers("/api/pedidos/**").authenticated()
+                        .requestMatchers("/api/pagamentos/**").authenticated()
 
-                        // 🏥 HEALTH CHECKS (acesso liberado para monitoramento)
+                        // 🏥 HEALTH CHECKS
                         .requestMatchers("/actuator/health", "/health").permitAll()
 
-                        // 🔒 QUALQUER OUTRO ENDPOINT exige autenticação
+                        // 🔒 TODAS OUTRAS REQUISIÇÕES
                         .anyRequest().authenticated()
                 )
-
-                // 💾 CONFIGURAÇÃO DE SESSÃO (stateless = não guarda estado no servidor)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // 🔐 PROVEDOR DE AUTENTICAÇÃO customizado
                 .authenticationProvider(authenticationProvider())
-
-                // 🎪 ADICIONA FILTRO JWT antes do filtro de autenticação padrão
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     /**
-     * FILTRO JWT PERSONALIZADO
+     * Filtro de autenticação JWT
      *
-     * Responsável por:
-     * - Extrair token JWT do header Authorization
-     * - Validar token
-     * - Carregar UserDetails do usuário
-     * - Configurar SecurityContext com autenticação
+     * <p>Filtro personalizado para processar tokens JWT em cada requisição
+     * e configurar o contexto de segurança do Spring.</p>
+     *
+     * @return JwtAuthenticationFilter configurado
      */
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
@@ -125,23 +121,30 @@ public class SecurityConfig {
     }
 
     /**
-     * PROVEDOR DE AUTENTICAÇÃO DAO
+     * Provedor de autenticação personalizado
      *
-     * Integra Spring Security com nosso UserDetailsService customizado
-     * e encoder de senha BCrypt.
+     * <p>Configura o provedor de autenticação para usar o UserDetailsService
+     * personalizado e o encoder de senha BCrypt.</p>
+     *
+     * @return AuthenticationProvider configurado
      */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(usuarioDetailsService);  // Nosso service customizado
-        authProvider.setPasswordEncoder(passwordEncoder());         // Encoder BCrypt
+        authProvider.setUserDetailsService(usuarioDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
     /**
-     * GERENCIADOR DE AUTENTICAÇÃO
+     * Gerenciador de autenticação
      *
-     * Bean padrão do Spring Security para gerenciar processos de autenticação.
+     * <p>Bean responsável por gerenciar o processo de autenticação
+     * na aplicação.</p>
+     *
+     * @param config Configuração de autenticação do Spring
+     * @return AuthenticationManager configurado
+     * @throws Exception Se ocorrer erro na configuração
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -149,10 +152,12 @@ public class SecurityConfig {
     }
 
     /**
-     * ENCODER DE SENHAS
+     * Encoder de senha BCrypt
      *
-     * Usa BCrypt para hashing seguro de senhas.
-     * Strength 10 = 2^10 iterações (balance entre segurança e performance).
+     * <p>Bean responsável por codificar e verificar senhas
+     * usando o algoritmo BCrypt.</p>
+     *
+     * @return PasswordEncoder com algoritmo BCrypt
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -160,22 +165,25 @@ public class SecurityConfig {
     }
 
     /**
-     * CONFIGURAÇÃO CORS (Cross-Origin Resource Sharing)
+     * Configuração CORS para comunicação com frontend
      *
-     * Permite comunicação segura entre frontend e backend em origens diferentes.
+     * <p>Permite requisições cross-origin do frontend Angular
+     * e outros clientes autorizados.</p>
+     *
+     * @return CorsConfigurationSource configurado
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // Frontend URL
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:4200"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type")); // Headers visíveis para front
-        configuration.setAllowCredentials(true);  // Permite cookies/auth credentials
-        configuration.setMaxAge(3600L);           // Cache de pré-flight requests por 1 hora
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Aplica a todas as rotas
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

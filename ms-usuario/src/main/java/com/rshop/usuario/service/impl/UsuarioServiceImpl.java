@@ -1,16 +1,16 @@
 package com.rshop.usuario.service.impl;
 
-
-
 import com.rshop.usuario.dto.usuario.PerfilResponse;
 import com.rshop.usuario.dto.usuario.PerfilUpdateRequest;
 import com.rshop.usuario.dto.usuario.UsuarioRequest;
 import com.rshop.usuario.dto.usuario.UsuarioResponse;
+import com.rshop.usuario.exception.UsuarioException;
 import com.rshop.usuario.model.Perfil;
 import com.rshop.usuario.model.Role;
 import com.rshop.usuario.model.Usuario;
 import com.rshop.usuario.repository.PerfilRepository;
 import com.rshop.usuario.repository.UsuarioRepository;
+import com.rshop.usuario.service.JwtService;
 import com.rshop.usuario.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +21,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementação do serviço de usuários
+ * Gerencia operações CRUD, perfis e integração com JWT
+ */
 @Service
 @RequiredArgsConstructor
 public class UsuarioServiceImpl implements UsuarioService {
@@ -28,13 +32,17 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PerfilRepository perfilRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public UsuarioResponse criarUsuario(UsuarioRequest usuarioRequest) {
         // Verificar se email já existe
         if (usuarioRepository.existsByEmail(usuarioRequest.getEmail())) {
-            throw new RuntimeException("Email já cadastrado: " + usuarioRequest.getEmail());
+            throw new UsuarioException("Email já cadastrado: " + usuarioRequest.getEmail());
         }
 
         // Criar usuário
@@ -50,20 +58,52 @@ public class UsuarioServiceImpl implements UsuarioService {
         return toUsuarioResponse(usuarioSalvo);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public UsuarioResponse criarUsuarioAdmin(UsuarioRequest usuarioRequest) {
+        // Verificar se email já existe
+        if (usuarioRepository.existsByEmail(usuarioRequest.getEmail())) {
+            throw new UsuarioException("Email já cadastrado: " + usuarioRequest.getEmail());
+        }
+
+        // Criar usuário admin
+        Usuario usuario = new Usuario();
+        usuario.setEmail(usuarioRequest.getEmail());
+        usuario.setSenha(passwordEncoder.encode(usuarioRequest.getSenha()));
+        usuario.setRole(Role.ADMIN);
+        usuario.setEnabled(true);
+        usuario.setDataCriacao(LocalDateTime.now());
+
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
+        return toUsuarioResponse(usuarioSalvo);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UsuarioResponse buscarPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com ID: " + id));
+                .orElseThrow(() -> new UsuarioException("Usuário não encontrado com ID: " + id));
         return toUsuarioResponse(usuario);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public UsuarioResponse buscarPorEmail(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com email: " + email));
+                .orElseThrow(() -> new UsuarioException("Usuário não encontrado com email: " + email));
         return toUsuarioResponse(usuario);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<UsuarioResponse> listarTodos() {
         return usuarioRepository.findAll().stream()
@@ -71,18 +111,21 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public UsuarioResponse atualizarUsuario(Long id, UsuarioRequest usuarioRequest) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com ID: " + id));
+                .orElseThrow(() -> new UsuarioException("Usuário não encontrado com ID: " + id));
 
         // Atualizar email se fornecido e diferente
         if (usuarioRequest.getEmail() != null &&
                 !usuarioRequest.getEmail().equals(usuario.getEmail())) {
 
             if (usuarioRepository.existsByEmail(usuarioRequest.getEmail())) {
-                throw new RuntimeException("Email já está em uso: " + usuarioRequest.getEmail());
+                throw new UsuarioException("Email já está em uso: " + usuarioRequest.getEmail());
             }
             usuario.setEmail(usuarioRequest.getEmail());
         }
@@ -101,11 +144,14 @@ public class UsuarioServiceImpl implements UsuarioService {
         return toUsuarioResponse(usuarioAtualizado);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public UsuarioResponse atualizarPerfil(Long usuarioId, PerfilUpdateRequest perfilRequest) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com ID: " + usuarioId));
+                .orElseThrow(() -> new UsuarioException("Usuário não encontrado com ID: " + usuarioId));
 
         Perfil perfil = usuario.getPerfil();
         if (perfil == null) {
@@ -130,21 +176,31 @@ public class UsuarioServiceImpl implements UsuarioService {
         return toUsuarioResponse(usuario);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void deletarUsuario(Long id) {
         if (!usuarioRepository.existsById(id)) {
-            throw new RuntimeException("Usuário não encontrado com ID: " + id);
+            throw new UsuarioException("Usuário não encontrado com ID: " + id);
         }
         usuarioRepository.deleteById(id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean existePorEmail(String email) {
         return usuarioRepository.existsByEmail(email);
     }
 
-    // Método de conversão para Response
+    /**
+     * Converte entidade Usuario para UsuarioResponse
+     * @param usuario Entidade usuário
+     * @return Response DTO
+     */
     private UsuarioResponse toUsuarioResponse(Usuario usuario) {
         UsuarioResponse response = new UsuarioResponse();
         response.setId(usuario.getId());
@@ -161,6 +217,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         return response;
     }
 
+    /**
+     * Converte entidade Perfil para PerfilResponse
+     * @param perfil Entidade perfil
+     * @return Response DTO
+     */
     private PerfilResponse toPerfilResponse(Perfil perfil) {
         PerfilResponse response = new PerfilResponse();
         response.setNomeCompleto(perfil.getNomeCompleto());

@@ -1,6 +1,4 @@
 package com.rshop.usuario.security;
-
-
 import com.rshop.usuario.service.JwtService;
 import com.rshop.usuario.service.impl.UsuarioDetailsService;
 import jakarta.servlet.FilterChain;
@@ -18,6 +16,25 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filtro de autenticação JWT para processar tokens em cada requisição
+ *
+ * <p>Filtro que intercepta todas as requisições HTTP para verificar a presença
+ * de um token JWT válido no header Authorization. Se válido, configura a autenticação
+ * no contexto de segurança do Spring.</p>
+ *
+ * <p><strong>Fluxo de autenticação:</strong></p>
+ * <ol>
+ *   <li>Verifica header Authorization com prefixo "Bearer "</li>
+ *   <li>Extrai e valida o token JWT</li>
+ *   <li>Carrega UserDetails a partir do token válido</li>
+ *   <li>Configura autenticação no SecurityContext</li>
+ * </ol>
+ *
+ * @author [Seu Nome]
+ * @version 1.0
+ * @since 2024
+ */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -25,6 +42,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UsuarioDetailsService usuarioDetailsService;
 
+    /**
+     * Processa cada requisição HTTP para autenticação JWT
+     *
+     * <p>Método principal do filtro que verifica a presença de token JWT,
+     * valida-o e configura a autenticação no contexto de segurança.</p>
+     *
+     * @param request Requisição HTTP
+     * @param response Resposta HTTP
+     * @param filterChain Cadeia de filtros
+     * @throws ServletException Se ocorrer erro no servlet
+     * @throws IOException Se ocorrer erro de I/O
+     */
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,

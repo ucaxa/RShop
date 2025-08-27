@@ -14,5 +14,6 @@ public interface UsuarioService {
     UsuarioResponse atualizarPerfil(Long usuarioId, PerfilUpdateRequest perfilRequest);
     void deletarUsuario(Long id);
     boolean existePorEmail(String email);
+    UsuarioResponse criarUsuarioAdmin(UsuarioRequest usuarioRequest);
 }
 
